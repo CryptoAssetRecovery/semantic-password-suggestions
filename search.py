@@ -1,14 +1,16 @@
 from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 from langchain.vectorstores import Chroma
-from src.embedding import get_embedding_function
+from src.embedding import embedding_function
 
 def semantic_search(query):
 
-    db = Chroma(persist_directory="./chroma_db", embedding_function=get_embedding_function())
-    suggestions = db.semantic_search(query, k=10)
+    db = Chroma(host='localhost', port=8000, embedding_function=embedding_function())
+
+    retriever = db.as_retriever(search_type="mmr", search_kwargs={"k": 10})
+    suggestions = retriever.get_relevant_documents(query)
 
     return suggestions
 
 if __name__ == "__main__":
-    suggestions = semantic_search("skihouse")
+    suggestions = semantic_search("charlesb03824")
     [print(pwd.page_content) for pwd in suggestions]

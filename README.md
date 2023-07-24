@@ -2,9 +2,13 @@
 
 ## Installation:
 
-### 1. Run Milvus
+### 1. Install and Run ChromaDB
 Step 1: Install docker and docker-compose
+Step 2: Clone ChromaDB
+```
+https://github.com/chroma-core/chroma
+```
 Step 2: Start the docker using the command:
 ```
-docker-compose up -d
+sudo docker-compose up -d --build
 ```
