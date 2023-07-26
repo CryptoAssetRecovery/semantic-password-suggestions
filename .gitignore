@@ -1,5 +1,10 @@
 .env
+env/
 __pycache__/
-chroma_db/
+
 passwords/rockyou.txt
-chroma/
+passwords/top500k.txt
+passwords/crackstation-human-only.txt
+
+faiss_index/
+depricated/
