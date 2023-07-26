@@ -1,3 +1,5 @@
 langchain==0.0.24
 pymilvus==2.2.14
 sentence_transformers==2.2.2
+chromadb==0.4.2
+matplotlib==3.7.2

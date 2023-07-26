@@ -1,28 +1,34 @@
 # create the chroma client
+from langchain.embeddings import HuggingFaceEmbeddings
 import chromadb
-import uuid
 from chromadb.config import Settings
-from src.embedding import embedding_function
+import uuid
+from src.embedding import embedding_function as ef
 import time
 
 def update_db():
-
-    client = chromadb.HttpClient(settings=Settings(allow_reset=True))
-    client.delete_collection("passwords")
-    collection = client.create_collection("passwords", embedding_function=embedding_function())
-
-    # load the document and split it into chunks
-    with open("passwords/top15k.txt", "r") as f:
+    client = chromadb.HttpClient(host='localhost', port=8000, settings=Settings(anonymized_telemetry=False))
+    try:
+        client.delete_collection("passwords")
+    except:
+        pass
+    collection = client.create_collection(name="passwords")
+    with open("passwords/top50k.txt", "r") as f:
         passwords = f.read().splitlines()
 
-    ids = [str(uuid.uuid1()) for pwd in passwords]
-    metadata = [{'source':'top15k'} for pwd in passwords]
+    if len(passwords) > 25000:
+        # make a number of lists of max 25000
+        passwords = [passwords[i:i + 25000] for i in range(0, len(passwords), 25000)]
 
-    collection.add(
-        ids=ids,
-        metadatas=metadata,
-        documents=passwords,
-    )
+    for pwd_list in passwords:
+        ids = [str(uuid.uuid4()) for pwd in pwd_list]
+        metadata = [{'source':'top100k', 'length':len(pwd)} for pwd in pwd_list]
+
+        collection.add(
+            ids=ids,
+            metadatas=metadata,
+            documents=pwd_list,
+        )
 
     return "done"
 
@@ -30,5 +36,5 @@ if __name__ == "__main__":
     startTime = time.time()
     update_db()
     endTime = time.time()
-    print(str(endTime-startTime))
+    print(str((endTime-startTime)/60) + " minutes")
 
