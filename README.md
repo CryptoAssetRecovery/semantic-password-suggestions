@@ -12,7 +12,7 @@ python3 -m venv env/ && source env/bin/activate
 ### Step 2: Build Vector DB
 To load the vector db, run the following command in the project root:
 ```
-python3 faiss_disk.py -w passwords/top100k.txt
+python3 update_vector_db.py -w passwords/top100k.txt
 ```
 Then the upload should begin:
 ```
@@ -25,5 +25,5 @@ Progress: 200000/14344390 lines processed, 1.39% done.
 ### Step 3: Perform a Semantic Search
 To perform a search on the FAISS db, you can run the command:
 ```
-python3 faiss_disk_search.py -p examplePa55word
+python3 search.py -p examplePa55word
 ```
