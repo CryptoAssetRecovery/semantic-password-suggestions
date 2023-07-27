@@ -5,7 +5,6 @@ import faiss
 import sqlite3
 import argparse
 import numpy as np
-import pandas as pd
 from contextlib import closing
 from update_vector_db import compute_embeddings
 

@@ -36,7 +36,7 @@ def initialize_faiss_index(dimension):
 def update_db(password_file: str):
     index = initialize_faiss_index(DIMENSION)
 
-    with open(password_file, "r") as f:
+    with open(password_file, "r", encoding='latin-1', errors='ignore') as f:
         first_batch = [next(f).strip() for _ in range(TRAINING_BATCH_SIZE)]
     first_batch_embeddings = np.array(compute_embeddings(first_batch))
 
@@ -49,11 +49,11 @@ def update_db(password_file: str):
 
     create_table(c)
 
-    total_lines = sum(1 for _ in open(password_file, "r"))
+    total_lines = sum(1 for _ in open(password_file, "r", encoding='latin-1', errors='ignore'))
     start = time.time()
 
     current_id = 0
-    with open(password_file, "r") as f:
+    with open(password_file, "r", encoding='latin-1', errors='ignore') as f:
         chunk = []
         for i, line in enumerate(f):
             chunk.append(line.strip())
