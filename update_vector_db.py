@@ -8,17 +8,18 @@ import argparse
 import numpy as np
 from tqdm import tqdm
 from typing import List
-from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
+from sentence_transformers import SentenceTransformer
 from datetime import timedelta, datetime
 
 CHUNK_SIZE = 25000  # Number of lines to read at a time
 DIMENSION = 384  # Dimension for FAISS index
 NLIST = 100
-TRAINING_BATCH_SIZE = 100000
+TRAINING_BATCH_SIZE = 75000
+
+embedding_function = SentenceTransformer('all-MiniLM-L12-v2')
 
 def compute_embeddings(passwords: List[str]):
-    embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
-    return embedding_function.embed_documents(passwords)
+    return embedding_function.encode(passwords)
 
 
 def create_table(cursor):
@@ -33,10 +34,8 @@ def initialize_faiss_index(dimension):
 
 
 def update_db(password_file: str):
-    # Initialize the index
     index = initialize_faiss_index(DIMENSION)
 
-    # Compute embeddings for the first batch
     with open(password_file, "r") as f:
         first_batch = [next(f).strip() for _ in range(TRAINING_BATCH_SIZE)]
     first_batch_embeddings = np.array(compute_embeddings(first_batch))
@@ -45,31 +44,28 @@ def update_db(password_file: str):
     index.train(first_batch_embeddings)
     assert index.is_trained
 
-    # Create a database connection and a cursor
     conn = sqlite3.connect('faiss_index/pwd_index.db')
     c = conn.cursor()
 
-    # Create table if not exists
     create_table(c)
 
-    total_lines = sum(1 for _ in open(password_file, "r"))  # get total lines for progress calculation
-
+    total_lines = sum(1 for _ in open(password_file, "r"))
     start = time.time()
 
+    current_id = 0
     with open(password_file, "r") as f:
         chunk = []
         for i, line in enumerate(f):
             chunk.append(line.strip())
             if (i + 1) % CHUNK_SIZE == 0:
-                # Compute embeddings for this chunk and add to the index
                 embeddings = np.array(compute_embeddings(chunk), dtype='float32')
-                ids = np.array(range(len(embeddings)), dtype='int64')  # create an array of IDs
+                ids = np.array(range(current_id, current_id + len(embeddings)), dtype='int64')
                 index.add_with_ids(embeddings, ids)
 
-                # Insert the passwords into the database
-                c.executemany('INSERT INTO passwords VALUES (?,?)', 
-                              [(j, pw) for j, pw in enumerate(chunk, start=i-len(chunk)+1)])
+                c.executemany('INSERT INTO passwords VALUES (?,?)',
+                              [(j, pw) for j, pw in enumerate(chunk, start=current_id)])
                 conn.commit()
+                current_id += len(chunk)
                 chunk = []
 
                 elapsed = time.time() - start
@@ -83,10 +79,10 @@ def update_db(password_file: str):
         # Handle the last chunk
         if chunk:
             embeddings = np.array(compute_embeddings(chunk), dtype='float32')
-            ids = np.array(range(len(embeddings)), dtype='int64')
+            ids = np.array(range(current_id, current_id + len(embeddings)), dtype='int64')
             index.add_with_ids(embeddings, ids)
-            c.executemany('INSERT INTO passwords VALUES (?,?)', 
-                          [(j, pw) for j, pw in enumerate(chunk, start=i-len(chunk)+1)])
+            c.executemany('INSERT INTO passwords VALUES (?,?)',
+                          [(j, pw) for j, pw in enumerate(chunk, start=current_id)])
             conn.commit()
 
     # Save the index to disk

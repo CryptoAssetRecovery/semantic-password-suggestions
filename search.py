@@ -1,10 +1,11 @@
 # search.py
 
+import json
 import faiss
 import sqlite3
 import argparse
 import numpy as np
-from sentence_transformers import SentenceTransformer
+import pandas as pd
 from contextlib import closing
 from update_vector_db import compute_embeddings
 
@@ -19,16 +20,28 @@ def get_similar_passwords(new_password: str, k: int = 15):
     index = faiss.read_index(FAISS_INDEX_FILE)
 
     # Retrieve the n most similar passwords
-    D, I = index.search(new_password_embedding, k)
+    distances, ans = index.search(new_password_embedding, k)
+
+    data = {}
+    for i, ans_index in enumerate(ans[0]):
+        # Create a dictionary of the distances and the answers, sorted by distances
+        data[str(ans_index)] = {"distance": distances[0][i], "password": None}
 
     # Connect to the database
     with closing(sqlite3.connect(DATABASE_FILE)) as conn:
         c = conn.cursor()
 
         # Retrieve the original passwords
-        similar_passwords = [c.execute('SELECT password FROM passwords WHERE id=?', (i,)).fetchone()[0] 
-                            for i in I[0]]
-    return similar_passwords
+        for index in ans[0]:
+            password = c.execute('SELECT password FROM passwords WHERE id=?', (str(index),)).fetchone()[0]
+            data[str(index)]["password"] = password
+
+    # Now, we convert the dictionary to a list of dictionaries to be able to sort by distance
+    data_list = [{"index": key, "distance": value["distance"], "password": value["password"]} for key, value in data.items()]
+    sorted_data_list = sorted(data_list, key=lambda x: x['distance'])
+
+    #json_data = json.dumps(sorted_data_list)
+    return sorted_data_list
 
 def main():
     parser = argparse.ArgumentParser(description="An implementation of FAISS for password search.",

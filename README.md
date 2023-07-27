@@ -6,7 +6,7 @@ This is a beta demo of a semanic search password candidate generator implementin
 ### Step 1: Setup environment
 To install the required dependancies, in the project root, run:
 ```
-python3 -m venv env/ && source env/bin/activate
+python3 -m venv env/ && source env/bin/activate && pip3 install -r requirements.txt
 ```
 
 ### Step 2: Build Vector DB
@@ -16,10 +16,7 @@ python3 update_vector_db.py -w passwords/top100k.txt
 ```
 Then the upload should begin:
 ```
-Progress: 50000/14344390 lines processed, 0.35% done.
-Progress: 100000/14344390 lines processed, 0.70% done.
-Progress: 150000/14344390 lines processed, 1.05% done.
-Progress: 200000/14344390 lines processed, 1.39% done.
+Progress: 50000/100000 lines processed, 50.00% done. Estimated end time: 2023-07-27 11:39:06. Remaining time: 0:02:11.425930.
 ```
 
 ### Step 3: Perform a Semantic Search
