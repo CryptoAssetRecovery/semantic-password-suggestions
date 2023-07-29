@@ -8,3 +8,8 @@ passwords/crackstation-human-only.txt
 
 faiss_index/
 depricated/
+indexes/
+
+OUT_FILE
+test_suggestions.txt
+results.json
